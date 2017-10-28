@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
@@ -7,27 +9,61 @@ namespace HomeExercises
 {
 	public class NumberValidatorTests
 	{
-		[Test]
-		public void Test()
-		{
-			Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, true));
-			Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
-			Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, false));
-			Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
+	    [TestCase(-1, 2, true, TestName = "Only Positive")]
+	    [TestCase(-1, 2, false, TestName = "Not Only Positive")]
+	    public void When_InvalidArguments_ShouldThrow_ArgumentException_DepandsOn_Precision
+            (int precision, int scale, bool onlyPositive)
+	    {
+	        Action act = () => new NumberValidator(precision, scale, onlyPositive);
+	        act.ShouldThrow<ArgumentException>().WithMessage("*positive*");
+        }
 
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("00.00"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-0.00"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+0.00"));
-			Assert.IsTrue(new NumberValidator(4, 2, true).IsValidNumber("+1.23"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+1.23"));
-			Assert.IsFalse(new NumberValidator(17, 2, true).IsValidNumber("0.000"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-1.23"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("a.sd"));
-		}
+	    [TestCase(1, -1, true, TestName = "Scale <= 0 and positive")]
+	    [TestCase(1, -1, false, TestName = "Scale <= 0 and negative")]
+	    [TestCase(1, 2, true, TestName = "Scale >= Precision and positive")]
+	    [TestCase(1, 2, false, TestName = "Scale >= Precision and negative")]
+	    public void When_InvalidArguments_ShouldThrow_ArgumentException_DepandsOn_Scale
+	        (int precision, int scale, bool onlyPositive)
+	    {
+	        Action act = () => new NumberValidator(precision, scale, onlyPositive);
+	        act.ShouldThrow<ArgumentException>().WithMessage("*non-negative*");
+	    }
+
+	    private static IEnumerable<(int precision, int scale, bool onlyPositive, string value, bool expected)> 
+            GetValidSourse() => new []
+	    {
+	        (3, 2, true, "", false),
+	        (3, 2, true, null, false),
+	        (3, 2, true, "0.0", true),
+	        (3, 2, true, "+0.0", true),
+	        (3, 2, true, "0.00", true),
+	        (3, 2, true, "0.000", false),
+	        (3, 2, true, "-0.0", false),
+	        (3, 2, false, "-0.0", true),
+	        (3, 2, false, "--0", false),
+	        (3, 2, false, "0.-0", false),
+	        (3, 2, true, "l.ol", false)
+	    };
+
+        [Test, TestCaseSource("TestCasesForValidArgsTest")]
+	    public bool When_ValidArguments_Should_WorkCorrectly
+	        (int precision, int scale, bool onlyPositive, string value)
+        {
+	        return new NumberValidator(precision, scale, onlyPositive).IsValidNumber(value);
+	    }
+        
+	    private static IEnumerable TestCasesForValidArgsTest()
+	    {
+	        foreach (var testCase in GetValidSourse())
+	        {
+	            var (precision, scale, onlyPositive, value, expected) = testCase;
+                yield return new TestCaseData(precision, scale, onlyPositive, value)
+                    .Returns(expected)
+                    .SetName($"return {expected} when m,k={precision},{scale}, " +
+                                $"{(onlyPositive ? "positive" : "negative")} nums " +
+                                $"and value = {value}");
+	        }
+	    }
 	}
 
 	public class NumberValidator
