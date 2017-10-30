@@ -17,8 +17,6 @@ namespace HomeExercises
 
             actualTsar.ShouldBeEquivalentTo(expectedTsar,
                 options => options
-                    .IncludingFields()
-                    .IncludingProperties()
                     .Excluding(obj => obj.SelectedMemberInfo.DeclaringType == typeof(Person)
                                       && obj.SelectedMemberInfo.Name == "Id"));
         }
@@ -43,10 +41,13 @@ namespace HomeExercises
             // Было бы вообще круто если мы сделали наш класс Person Value-типом (тот что из DDD)
             // Тогда нам бы вообще не пришлось реализовывать Equals, GetHashCode и ToString, ведь
             // в нашем потенциальном проекте может быть не только 1 Value-тип. Таким образом мы 
-            // можем избавиться от затратного по времени определения методов Equals, GetHashCode и ToString
+            // можем избавиться от затратного по времени определения методов Equals, GetHashCode и ToString.
 
             // Допустим мы добавили новое поле в класс Person, fluent сделает все верно, учтет новые поля,
             // а вот в альтернативном решение придется добавить строчки для обработки этих полей.
+            // Так же, в альтернативном решении не будет говориться где произошла ошибка, будет протсо
+            // выведено: было false а ожидалось true. Fluent выведет подробную информацию, что поможет быстро 
+            // найти ошибку.
         }
 
         private bool AreEqual(Person actual, Person expected)
